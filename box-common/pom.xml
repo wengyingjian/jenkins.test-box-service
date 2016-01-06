@@ -8,5 +8,15 @@
 	<packaging>jar</packaging>
 	<version>2.1.0.1-SNAPSHOT</version>
 
-
+	<distributionManagement>
+		<repository>
+			<id>release</id>
+			<url>http://121.42.174.165:8081/nexus/content/repositories/releases/</url>
+		</repository>
+		<snapshotRepository>
+			<id>snapshots</id>
+			<url>http://121.42.174.165:8081/nexus/content/repositories/snapshots/</url>
+		</snapshotRepository>
+	</distributionManagement>
+	
 </project>

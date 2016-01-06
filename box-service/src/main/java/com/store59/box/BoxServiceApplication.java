@@ -1,14 +1,7 @@
 package com.store59.box;
 
-import com.caucho.hessian.client.HessianProxyFactory;
-import com.store59.base.common.api.DormentryApi;
-import com.store59.base.common.api.OrderPayAbnormalRecordApi;
-import com.store59.base.common.api.RepoApi;
-import com.store59.coupon.remoting.CouponService;
-import com.store59.dorm.common.api.DormApi;
-import com.store59.dorm.common.api.OrderbackRecordApi;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.net.MalformedURLException;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -22,23 +15,18 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.client.RestTemplate;
 
-import java.net.MalformedURLException;
+import com.caucho.hessian.client.HessianProxyFactory;
+import com.store59.box.remoting.UserService;
 
 @EnableCaching
 @SpringBootApplication
 @ComponentScan(basePackages = "com.store59")
-@EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = { DataSourceAutoConfiguration.class })
 @PropertySource("classpath:boxservice.properties")
-public class BoxServiceApplication extends SpringBootServletInitializer{
+public class BoxServiceApplication extends SpringBootServletInitializer {
 
-    private static Logger logger = LoggerFactory.getLogger(BoxServiceApplication.class);
-
-    @Value("${baseservice.url}")
-    private String repoServiceUrl;
-    @Value("${dormservice.url}")
-    private String dormServiceUrl;
-    @Value("${couponservice.url}")
-    private String couponServiceUrl;
+    @Value("${userservice.url}")
+    private String userServiceUrl;
 
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
@@ -50,67 +38,17 @@ public class BoxServiceApplication extends SpringBootServletInitializer{
     }
 
     @Bean
-    RepoApi repoApi() throws MalformedURLException {
+    UserService userService() throws MalformedURLException {
         HessianProxyFactory hessianProxyFactory = new HessianProxyFactory();
         hessianProxyFactory.setOverloadEnabled(true);
-        if (!repoServiceUrl.endsWith("/")) {
-            repoServiceUrl = repoServiceUrl + "/";
+        if (!userServiceUrl.endsWith("/")) {
+            userServiceUrl = userServiceUrl + "/";
         }
-        return (RepoApi) hessianProxyFactory.create(RepoApi.class, repoServiceUrl + "repo");
+        return (UserService) hessianProxyFactory.create(UserService.class, userServiceUrl + "user");
     }
 
     @Bean
-    OrderPayAbnormalRecordApi orderPayAbnormalRecordApi() throws MalformedURLException{
-        HessianProxyFactory hessianProxyFactory = new HessianProxyFactory();
-        hessianProxyFactory.setOverloadEnabled(true);
-        if (!repoServiceUrl.endsWith("/")) {
-            repoServiceUrl = repoServiceUrl + "/";
-        }
-        return (OrderPayAbnormalRecordApi) hessianProxyFactory.create(OrderPayAbnormalRecordApi.class, repoServiceUrl + "orderpayabnormalrecord");
-    }
-
-    @Bean
-    DormApi dormApi() throws MalformedURLException {
-        HessianProxyFactory hessianProxyFactory = new HessianProxyFactory();
-        hessianProxyFactory.setOverloadEnabled(true);
-        if (!dormServiceUrl.endsWith("/")) {
-            dormServiceUrl = dormServiceUrl + "/";
-        }
-        return (DormApi) hessianProxyFactory.create(DormApi.class, dormServiceUrl + "dorm");
-    }
-
-    @Bean
-    OrderbackRecordApi orderbackRecordApi() throws MalformedURLException {
-        HessianProxyFactory hessianProxyFactory = new HessianProxyFactory();
-        hessianProxyFactory.setOverloadEnabled(true);
-        if (!dormServiceUrl.endsWith("/")) {
-            dormServiceUrl = dormServiceUrl + "/";
-        }
-        return (OrderbackRecordApi) hessianProxyFactory.create(OrderbackRecordApi.class, dormServiceUrl + "orderbackrecord");
-    }
-
-    @Bean
-    DormentryApi dormentryApi() throws MalformedURLException {
-        HessianProxyFactory hessianProxyFactory = new HessianProxyFactory();
-        hessianProxyFactory.setOverloadEnabled(true);
-        if (!dormServiceUrl.endsWith("/")) {
-            dormServiceUrl = dormServiceUrl + "/";
-        }
-        return (DormentryApi) hessianProxyFactory.create(DormentryApi.class, dormServiceUrl + "dormentry");
-    }
-
-    @Bean
-    CouponService couponService() throws MalformedURLException {
-        HessianProxyFactory hessianProxyFactory = new HessianProxyFactory();
-        hessianProxyFactory.setOverloadEnabled(true);
-        if (!couponServiceUrl.endsWith("/")) {
-            couponServiceUrl = couponServiceUrl + "/";
-        }
-        return (CouponService) hessianProxyFactory.create(CouponService.class, couponServiceUrl + "coupon");
-    }
-
-    @Bean
-    public RestTemplate restTemplate(){
+    public RestTemplate restTemplate() {
         return new RestTemplate();
     }
 

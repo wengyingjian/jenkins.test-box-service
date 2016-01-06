@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.store59.box.dao.mapper.OrderMapper" >
+
+    <resultMap type="com.store59.box.model.Order" id="orderMap">
+        <id column="order_id" property="orderId" jdbcType="BIGINT"/>
+        <result column="sn" property="sn"/>
+        <result column="status" property="status"/>
+        <result column="pay_type" property="payType"/>
+        <result column="pay_trade_no" property="payTradeNo"/>
+        <result column="source" property="source"/>
+        <result column="box_id" property="boxId"/>
+        <result column="dorm_id" property="dormId"/>
+        <result column="dormentry_id" property="dormentryId"/>
+        <result column="coupon_code" property="couponCode"/>
+        <result column="coupon_discount" property="couponDiscount"/>
+        <result column="food_amount" property="foodAmount"/>
+        <result column="order_amount" property="orderAmount"/>
+        <result column="pay_time" property="payTime" />
+        <result column="cancel_time" property="cancelTime" />
+        <result column="create_time" property="createTime" />
+        <result column="uid" property="uid" />
+        <result column="ip" property="ip"/>
+        <result column="refund_status_code" property="refundStatusCode"/>
+        <result column="refund_status_msg" property="refundStatusMsg"/>
+        <result column="detail_json" property="detailJson"/>
+    </resultMap>
+
+    <sql id="file">
+        order_id,sn,status,pay_type,pay_trade_no,source,box_id,dorm_id,dormentry_id,coupon_code,coupon_discount,
+        food_amount,order_amount, pay_time,cancel_time,uid,
+        inet_ntoa(ip) ip, create_time,refund_status_code,refund_status_msg,detail_json
+    </sql>
+
+    <select id="findSumOfPaidOrderAmount" resultType="double">
+        SELECT IFNULL(SUM(order_amount),0.0)
+        FROM b_order
+        WHERE dorm_id = ${dormId}
+        AND status = 1
+        <if test="startPayTime != null">
+            AND pay_time <![CDATA[ >= ]]> #{startPayTime}
+        </if>
+        <if test="endPayTime != null">
+            AND pay_time <![CDATA[ < ]]> #{endPayTime}
+        </if>
+    </select>
+
+    <select id="getOrderListByUid" resultMap="orderMap">
+      SELECT
+      <include refid="file"/>
+        FROM b_order
+        WHERE uid = #{uid,jdbcType=INTEGER}
+        ORDER BY order_id DESC
+    </select>
+
+    <select id="getOrderListByOrderIds" resultMap="orderMap">
+        SELECT
+        <include refid="file"/>
+        FROM b_order
+        WHERE order_id IN
+        <foreach collection="list" item="orderId" index="index" open="(" close=")" separator=",">
+            #{orderId}
+        </foreach>
+        ORDER BY order_id DESC
+    </select>
+
+    <select id="getOrderById" resultMap="orderMap">
+        SELECT
+        <include refid="file"/>
+        FROM b_order
+        WHERE order_id = #{orderId,jdbcType=BIGINT}
+    </select>
+
+    <select id="getOrderBySn" resultMap="orderMap">
+        SELECT
+        <include refid="file"/>
+        FROM b_order
+        WHERE sn = #{orderSn}
+    </select>
+
+    <select id="getOrderCount" parameterType="com.store59.box.model.query.BoxOrderQuery"
+            resultType="int">
+        SELECT count(1)
+        FROM b_order
+        <where>
+            <if test="uid != null">
+                uid = #{uid}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt; ${createTimeBegin}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <select id="getOrderListByDormId" resultMap="orderMap">
+        select
+          <include refid="file"/>
+        from b_order where status in (0,1) and dorm_id = #{dormId}
+        <if test="beginTime != null">
+            AND create_time &gt;= #{beginTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+        ORDER BY create_time ASC
+    </select>
+
+    <update id="updateByPrimaryKeySelective" parameterType="com.store59.box.model.Order">
+        UPDATE b_order
+        <set>
+            <if test="payTime != null">
+                pay_time = #{payTime,jdbcType=INTEGER},
+            </if>
+            <if test="cancelTime != null">
+                cancel_time = #{cancelTime,jdbcType=INTEGER},
+            </if>
+            <if test="payType != null">
+                pay_type = #{payType},
+            </if>
+            <if test="payTradeNo != null">
+                pay_trade_no = #{payTradeNo,jdbcType=VARCHAR},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+        </set>
+        WHERE order_id = #{orderId}
+    </update>
+
+    <update id="orderRefund" parameterType="com.store59.box.model.OrderRefundUpdate">
+        UPDATE b_order
+        <set>
+            <if test="refundStatusCode != null">
+                refund_status_code = #{refundStatusCode},
+            </if>
+            <if test="refundStatusMsg != null">
+                refund_status_msg = #{refundStatusMsg},
+            </if>
+        </set>
+        WHERE sn = #{sn} AND refund_status_code = #{oldRefundStatusCode}
+    </update>
+
+    <update id="updateBySnSelective" parameterType="com.store59.box.model.Order">
+        UPDATE b_order
+        <set>
+            <if test="payTime != null">
+                pay_time = #{payTime,jdbcType=INTEGER},
+            </if>
+            <if test="cancelTime != null">
+                cancel_time = #{cancelTime,jdbcType=INTEGER},
+            </if>
+            <if test="payType != null">
+                pay_type = #{payType},
+            </if>
+            <if test="payTradeNo != null">
+                pay_trade_no = #{payTradeNo,jdbcType=VARCHAR},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+        </set>
+        <!-- 只有状态为新建时可修改订单状态 -->
+        WHERE sn = #{sn} AND status = 0
+    </update>
+
+    <insert id="insertSelective" parameterType="com.store59.box.model.Order">
+        <selectKey resultType="long" keyProperty="orderId">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        INSERT INTO b_order
+        <trim suffix=")" prefix="(" suffixOverrides=",">
+            <if test="orderId != null">
+                order_id,
+            </if>
+            <if test="sn != null">
+                sn,
+            </if>
+            <if test="status != null">
+                status,
+            </if>
+            <if test="payType != null">
+                pay_type,
+            </if>
+            <if test="payTradeNo != null">
+                pay_trade_no,
+            </if>
+            <if test="source != null">
+                source,
+            </if>
+            <if test="boxId != null">
+                box_id,
+            </if>
+            <if test="dormId != null">
+                dorm_id,
+            </if>
+            <if test="dormentryId != null">
+                dormentry_id,
+            </if>
+            <if test="couponCode != null">
+                coupon_code,
+            </if>
+            <if test="couponDiscount != null">
+                coupon_discount,
+            </if>
+            <if test="foodAmount != null">
+                food_amount,
+            </if>
+            <if test="orderAmount != null">
+                order_amount,
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+            <if test="payTime != null">
+                pay_time,
+            </if>
+            <if test="cancelTime != null">
+                cancel_time,
+            </if>
+            <if test="uid != null">
+                uid,
+            </if>
+            <if test="ip != null">
+                ip,
+            </if>
+            <if test="detailJson != null">
+                detail_json,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="orderId != null">
+                #{orderId,jdbcType=INTEGER},
+            </if>
+            <if test="sn != null">
+                #{sn},
+            </if>
+            <if test="status != null">
+                #{status,jdbcType=INTEGER},
+            </if>
+            <if test="payType != null">
+                #{payType,jdbcType=INTEGER},
+            </if>
+            <if test="payTradeNo != null">
+                #{payTradeNo,jdbcType=VARCHAR},
+            </if>
+            <if test="source != null">
+                #{source,jdbcType=INTEGER},
+            </if>
+            <if test="boxId != null">
+                #{boxId,jdbcType=INTEGER},
+            </if>
+            <if test="dormId != null">
+                #{dormId,jdbcType=INTEGER},
+            </if>
+            <if test="dormentryId != null">
+                #{dormentryId,jdbcType=INTEGER},
+            </if>
+            <if test="couponCode != null">
+                #{couponCode,jdbcType=VARCHAR},
+            </if>
+            <if test="couponDiscount != null">
+                #{couponDiscount,jdbcType=DECIMAL},
+            </if>
+            <if test="foodAmount != null">
+                #{foodAmount,jdbcType=DECIMAL},
+            </if>
+            <if test="orderAmount != null">
+                #{orderAmount,jdbcType=DECIMAL},
+            </if>
+            <if test="createTime != null">
+                #{createTime},
+            </if>
+            <if test="payTime != null">
+                #{payTime},
+            </if>
+            <if test="cancelTime != null">
+                #{cancelTime},
+            </if>
+            <if test="uid != null">
+                #{uid,jdbcType=INTEGER},
+            </if>
+            <if test="ip != null">
+                inet_aton(#{ip,jdbcType=VARCHAR}),
+            </if>
+            <if test="detailJson != null">
+                #{detailJson},
+            </if>
+        </trim>
+    </insert>
+</mapper>

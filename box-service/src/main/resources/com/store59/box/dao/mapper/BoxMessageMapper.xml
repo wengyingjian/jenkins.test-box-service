@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.store59.box.dao.mapper.BoxMessageMapper" >
+
+    <insert id="insertSelective" parameterType="com.store59.box.model.BoxMessage">
+        INSERT INTO b_box_message
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="boxId != null">
+                box_id,
+            </if>
+            <if test="uid != null">
+                uid,
+            </if>
+            <if test="message != null">
+                message,
+            </if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="boxId != null">
+                #{boxId,jdbcType=INTEGER},
+            </if>
+            <if test="uid != null">
+                #{uid,jdbcType=INTEGER},
+            </if>
+            <if test="message != null">
+                #{message,jdbcType=VARCHAR},
+            </if>
+            UNIX_TIMESTAMP(now())
+        </trim>
+
+    </insert>
+</mapper>

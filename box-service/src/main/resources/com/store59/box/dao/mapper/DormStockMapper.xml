@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.store59.box.dao.mapper.DormStockMapper" >
+
+  <resultMap type="com.store59.box.model.BoxDormStock" id="stockmap">
+    <id column="id" property="id"/>
+    <result column="dorm_id" property="dormId"/>
+    <result column="rid" property="rid"/>
+    <result column="safe_stock" property="safeStock"/>
+    <result column="stock" property="stock"/>
+    <result column="modify_time" property="modifyTime"/>
+  </resultMap>
+
+  <sql id="filed">
+    id, dorm_id, rid, safe_stock, stock, modify_time
+  </sql>
+
+  <insert id="addStock" parameterType="com.store59.box.model.BoxDormStock" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO b_dorm_stock (
+        id
+      , dorm_id
+      , rid
+      , safe_stock
+      , stock
+      , modify_time)
+      VALUES
+        (null
+        , #{dormId}
+        , #{rid}
+        , #{safeStock}
+        , #{stock}
+        , unix_timestamp(now()))
+    ON DUPLICATE KEY UPDATE
+      stock = stock + ${stock}
+  </insert>
+
+  <insert id="addStockChangeLog" parameterType="com.store59.box.model.BoxDormStockChange" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO b_dorm_stockchange (
+      id
+    , dorm_id
+    , rid
+    , type
+    , change_quantity
+    , old_quantity
+    , new_quantity
+    , remark
+    , create_time)
+    VALUES
+    (null
+    , #{dormId}
+    , #{rid}
+    , #{type}
+    , #{changeQuantity}
+    , #{oldQuantity}
+    , #{newQuantity}
+    , #{remark}
+    , unix_timestamp(now()))
+  </insert>
+
+  <update id="subStock">
+    UPDATE b_dorm_stock
+    SET modify_time = unix_timestamp(now())
+      , stock = stock - #{quantity}
+    WHERE dorm_id = #{dormId}
+    AND rid = #{rid}
+    AND stock >= #{quantity}
+  </update>
+
+  <update id="updateStock" parameterType="com.store59.box.model.BoxDormStock">
+    UPDATE b_dorm_stock
+    SET modify_time = unix_timestamp(now())
+    <if test="safeStock != null">
+      , safe_stock = #{safeStock}
+    </if>
+    <if test="stock != null">
+      , stock = #{stock}
+    </if>
+    WHERE
+    <if test="id != null">
+      id = #{id}
+    </if>
+    <if test="id == null and dorm_id != null and rid != null">
+      dorm_id = #{dormId} AND rid = #{rid}
+    </if>
+
+  </update>
+
+  <select id="findStockById" resultMap="stockmap" >
+    SELECT
+    <include refid="filed"/>
+    FROM b_dorm_stock
+    WHERE id = #{id}
+    <if test="needLock">
+      FOR UPDATE
+    </if>
+  </select>
+
+  <select id="findStockByRid" resultMap="stockmap" >
+    SELECT
+    <include refid="filed"/>
+    FROM b_dorm_stock
+    WHERE dorm_id = #{dormId}
+    AND rid = #{rid}
+    <if test="needLock">
+      FOR UPDATE
+    </if>
+  </select>
+
+  <select id="findBoxTemplateList" resultType="com.store59.box.model.BoxTemplate" >
+    SELECT
+        template_id as templateId
+      , rid
+      , quantity
+      , price
+      , modify_time as modifyTime
+    FROM b_box_template
+    WHERE template_id = #{templateId}
+  </select>
+
+  <select id="findStockList" resultMap="stockmap" >
+    SELECT
+    <include refid="filed"/>
+    FROM b_dorm_stock
+    WHERE dorm_id = #{dormId}
+    ORDER BY rid
+    <if test="needLock">
+      FOR UPDATE
+    </if>
+  </select>
+
+</mapper>

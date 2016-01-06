@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.store59.box.dao.mapper.PurchaseMapper" >
+
+  <resultMap type="com.store59.box.model.BoxPurchase" id="purchaseMap">
+    <id column="purchase_id" property="id"/>
+    <result column="box_id" property="boxId"/>
+    <result column="dorm_id" property="dormId"/>
+    <result column="status" property="boxPurchaseStatus"  typeHandler="com.store59.box.dao.type.EnumTypeHandler"/>
+    <result column="delivery_time" property="deliveryTime"/>
+    <result column="create_time" property="createTime"/>
+    <result column="modify_time" property="modifyTime"/>
+  </resultMap>
+
+  <resultMap type="com.store59.box.model.BoxPurchaseItem" id="purchaseItemMap">
+    <id column="id" property="id"/>
+    <result column="purchase_id" property="purchaseId"/>
+    <result column="rid" property="rid"/>
+    <result column="quantity" property="quantity"/>
+  </resultMap>
+
+  <sql id="filed">
+    purchase_id, box_id, dorm_id, status, create_time, delivery_time, modify_time
+  </sql>
+
+  <sql id="itemFiled">
+    id, purchase_id, rid, quantity
+  </sql>
+
+  <insert id="addPurchase"  useGeneratedKeys="true" keyProperty="boxPurchase.id">
+    INSERT INTO
+      <if test="isDelivered == false">
+        b_box_purchase
+      </if>
+      <if test="isDelivered">
+        b_box_purchase_delivered
+      </if>
+      (
+        <include refid="filed"/>
+      )
+      VALUES
+        ( <if test="isDelivered == false">
+            null
+          </if>
+          <if test="isDelivered">
+            #{boxPurchase.id}
+          </if>
+        , #{boxPurchase.boxId}
+        , #{boxPurchase.dormId}
+        , #{boxPurchase.boxPurchaseStatus}
+        , unix_timestamp(now())
+        , unix_timestamp(now())
+        , unix_timestamp(now()))
+  </insert>
+
+  <insert id="addPurchaseItem" useGeneratedKeys="true" keyProperty="boxPurchaseItem.id">
+    INSERT INTO
+    <if test="isDelivered == false">
+      b_box_purchase_item
+    </if>
+    <if test="isDelivered">
+      b_box_purchase_item_delivered
+    </if>
+    (
+      <include refid="itemFiled"/>
+    )
+    VALUES
+    ( <if test="isDelivered == false">
+        null
+      </if>
+      <if test="isDelivered">
+        #{boxPurchaseItem.id}
+      </if>
+    , #{boxPurchaseItem.purchaseId}
+    , #{boxPurchaseItem.rid}
+    , #{boxPurchaseItem.quantity})
+  </insert>
+
+  <update id="updatePurchaseStatus">
+    UPDATE b_box_purchase
+    SET modify_time = unix_timestamp(now())
+    , status = #{boxPurchaseStatus}
+    WHERE purchase_id = #{purchaseId}
+    <if test="boxPurchaseStatus.name() == 'DELIVERED'">
+      AND status != 'delivered'
+      AND status != 'cancel'
+    </if>
+  </update>
+
+  <delete id="deletePurchase">
+    DELETE FROM b_box_purchase WHERE purchase_id = #{purchaseId}
+  </delete>
+
+  <delete id="deletePurchaseItem">
+    DELETE FROM b_box_purchase_item WHERE purchase_id = #{purchaseId}
+  </delete>
+
+  <select id="findPurchaseById" resultMap="purchaseMap" >
+    SELECT
+    <include refid="filed"/>
+    FROM b_box_purchase
+    WHERE purchase_id = #{purchaseId}
+  </select>
+
+  <select id="findPurchaseCount" resultType="int">
+    SELECT COUNT(*) FROM
+    <if test="boxPurchaseStatus != null and boxPurchaseStatus.name() != 'DELIVERED'">
+      b_box_purchase
+    </if>
+    <if test="boxPurchaseStatus != null and boxPurchaseStatus.name() == 'DELIVERED'">
+      b_box_purchase_delivered
+    </if>
+     WHERE dorm_id = ${dormId}
+     AND status = #{boxPurchaseStatus}
+  </select>
+
+  <select id="findPurchaseItemList" resultMap="purchaseItemMap" >
+    SELECT
+    <include refid="itemFiled"/>
+    FROM b_box_purchase_item
+    WHERE purchase_id = #{purchaseId}
+    ORDER BY rid
+  </select>
+
+  <select id="findItemListByPurchaseIdListStr" resultMap="purchaseItemMap" >
+    SELECT
+    <include refid="itemFiled"/>
+    FROM
+    <if test="isDelivered == false">
+      b_box_purchase_item
+    </if>
+    <if test="isDelivered">
+      b_box_purchase_item_delivered
+    </if>
+    WHERE purchase_id in (${purchaseIdListStr})
+    ORDER BY rid
+  </select>
+
+  <select id="findPurchaseList" parameterType="com.store59.box.model.query.PurchaseQuery" resultMap="purchaseMap" >
+    SELECT
+    <include refid="filed"/>
+    FROM
+    <if test="boxPurchaseStatus != null and boxPurchaseStatus.name() != 'DELIVERED'">
+        b_box_purchase
+    </if>
+    <if test="boxPurchaseStatus != null and boxPurchaseStatus.name() == 'DELIVERED'">
+        b_box_purchase_delivered
+    </if>
+    <where>
+        <if test="purchaseId != null">
+          AND purchase_id = #{purchaseId}
+        </if>
+        <if test="dormId != null">
+          AND dorm_id = #{dormId}
+        </if>
+        <if test="boxId != null">
+          AND box_id = #{boxId}
+        </if>
+        <if test="boxPurchaseStatus != null">
+          AND status = #{boxPurchaseStatus}
+        </if>
+        <if test="deliveryTime != null">
+          AND delivery_time = #{deliveryTime}
+        </if>
+        <if test="boxList != null">
+          AND box_id IN
+          <foreach collection="boxList" item="box" index="index" open="(" close=")" separator=",">
+            #{box.id}
+          </foreach>
+        </if>
+    </where>
+    <if test="boxPurchaseStatus != null and boxPurchaseStatus.name() == 'DELIVERED'">
+      ORDER BY delivery_time DESC
+    </if>
+    LIMIT ${limit}
+    OFFSET ${offset}
+  </select>
+
+</mapper>

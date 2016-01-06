@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.store59.box.dao.mapper.BoxApplyMapper" >
+
+    <resultMap type="com.store59.box.model.BoxApply" id="applyMap">
+        <id column="id" property="id"/>
+        <result column="dormentry_id" property="dormentryId"/>
+        <result column="dorm_id" property="dormId"/>
+        <result column="status" property="boxApplyStatus" typeHandler="com.store59.box.dao.type.EnumTypeHandler"/>
+        <result column="room" property="room"/>
+        <result column="owner" property="owner"/>
+        <result column="phone" property="phone"/>
+        <result column="gender" property="gender" typeHandler="com.store59.box.dao.type.EnumTypeHandler"/>
+        <result column="create_time" property="createTime"/>
+        <result column="modify_time" property="modifyTime"/>
+        <result column="uid" property="uid"/>
+        <result column="rids" property="rids"/>
+    </resultMap>
+
+    <sql id="filed">
+        id, dormentry_id, dorm_id, room, owner, phone, gender, status, create_time, modify_time,uid,rids
+    </sql>
+
+    <insert id="insertSelective" parameterType="com.store59.box.model.BoxApply">
+      INSERT INTO b_box_apply
+      <trim prefix="(" suffix=")" suffixOverrides=",">
+          <if test="dormentryId != null">
+              dormentry_id,
+          </if>
+          <if test="uid != null">
+              uid,
+          </if>
+          <if test="dormId != null">
+              dorm_id,
+          </if>
+          <if test="room != null">
+              room,
+          </if>
+          <if test="owner != null">
+              owner,
+          </if>
+          <if test="phone != null">
+              phone,
+          </if>
+          <if test="gender != null">
+              gender,
+          </if>
+          <if test="rids != null">
+              rids,
+          </if>
+              create_time,
+              modify_time
+      </trim>
+      <trim prefix="values (" suffix=")" suffixOverrides=",">
+          <if test="dormentryId != null">
+              #{dormentryId,jdbcType=INTEGER},
+          </if>
+          <if test="uid != null">
+              #{uid},
+          </if>
+          <if test="dormId != null">
+              #{dormId,jdbcType=INTEGER},
+          </if>
+          <if test="room != null">
+              #{room,jdbcType=VARCHAR},
+          </if>
+          <if test="owner != null">
+              #{owner,jdbcType=VARCHAR},
+          </if>
+          <if test="phone != null">
+              #{phone,jdbcType=VARCHAR},
+          </if>
+          <if test="gender != null">
+              #{gender},
+          </if>
+          <if test="rids != null">
+              #{rids},
+          </if>
+              UNIX_TIMESTAMP(now()),
+              UNIX_TIMESTAMP(now())
+      </trim>
+
+    </insert>
+
+    <update id="updateBoxApplyStatus" parameterType="java.util.Map">
+        UPDATE b_box_apply
+        SET modify_time = unix_timestamp(now())
+          , status = #{boxApplyStatus}
+          <if test="boxId != null">
+              ,box_id = #{boxId}
+          </if>
+        WHERE id = #{boxApplyId}
+    </update>
+
+    <select id="findBoxApplyById" resultMap="applyMap">
+        SELECT
+          <include refid="filed"></include>
+        FROM b_box_apply
+        WHERE id = #{boxApplyId}
+    </select>
+
+    <select id="findBoxApplyCount" resultType="int">
+        SELECT COUNT(*) FROM b_box_apply WHERE dorm_id = ${dormId}
+        <if test="boxApplyStatus != null">
+            AND status = #{boxApplyStatus}
+        </if>
+    </select>
+
+    <select id="findBoxApplyList" resultMap="applyMap" parameterType="com.store59.box.model.query.BoxApplyQuery">
+        SELECT
+        <include refid="filed"></include>
+        FROM b_box_apply
+        <where>
+            <if test="dormentryId != null">
+                AND dormentry_id = #{dormentryId}
+            </if>
+            <if test="dormId != null">
+                AND dorm_id = #{dormId}
+            </if>
+            <if test="room != null">
+                AND room = #{room}
+            </if>
+            <if test="uid != null">
+                AND uid = #{uid}
+            </if>
+            <if test="boxApplyStatus != null">
+                AND status = #{boxApplyStatus}
+            </if>
+            <if test="boxId != null">
+                AND box_id = #{boxId}
+            </if>
+        </where>
+        ORDER BY id DESC
+        LIMIT ${limit}
+        OFFSET ${offset}
+    </select>
+
+</mapper>

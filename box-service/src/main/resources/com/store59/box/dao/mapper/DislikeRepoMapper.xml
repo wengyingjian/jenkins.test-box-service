@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.store59.box.dao.mapper.DislikeRepoMapper" >
+    <resultMap id="dislikeRepoMapper" type="com.store59.box.model.DislikeRepo">
+        <id column="id" property="id"/>
+        <result column="uid" property="uid"/>
+        <result column="rid" property="rid"/>
+        <result column="create_time" property="createTime"/>
+        <result column="modify_time" property="modifyTime"/>
+    </resultMap>
+
+    <select id="selectDislikeRepoListByUid" resultMap="dislikeRepoMapper">
+        SELECT id,uid,rid,create_time,modify_time FROM b_repo_dislike WHERE uid = #{uid}
+    </select>
+
+    <select id="countByUid" resultType="java.lang.Integer">
+        SELECT count(id) FROM b_repo_dislike WHERE uid = #{uid} AND rid = #{rid}
+    </select>
+
+    <delete id="deleteDislikeRepo" >
+        DELETE FROM b_repo_dislike WHERE uid = #{uid} AND rid = #{rid}
+    </delete>
+
+    <delete id="deleteDislikeRepoList" >
+        DELETE FROM b_repo_dislike WHERE uid = #{uid} AND rid IN
+        <foreach item="item" index="index" collection="rids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <insert id="insertSelective" parameterType="com.store59.box.model.DislikeRepo">
+        INSERT INTO b_repo_dislike
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="uid != null">
+                uid,
+            </if>
+            <if test="rid != null">
+                rid,
+            </if>
+                create_time,
+                modify_time
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id},
+            </if>
+            <if test="uid != null">
+                #{uid},
+            </if>
+            <if test="rid != null">
+                #{rid},
+            </if>
+            unix_timestamp(now()),
+            unix_timestamp(now())
+        </trim>
+    </insert>
+</mapper>

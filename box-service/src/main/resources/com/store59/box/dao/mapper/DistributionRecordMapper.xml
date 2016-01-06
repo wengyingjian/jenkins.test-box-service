@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.store59.box.dao.mapper.DistributionRecordMapper">
+    <resultMap id="distributionRecordMapper" type="com.store59.box.model.distribution.DistributionRecord">
+        <id column="record_id" property="recordId"/>
+        <result column="box_id" property="boxId"/>
+        <result column="rid" property="rid"/>
+        <result column="quantity" property="quantity"/>
+        <result column="status" property="distributionRecordStatus" typeHandler="com.store59.box.dao.type.EnumTypeHandler"/>
+        <result column="add_by" property="distributionRecordAddBy" typeHandler="com.store59.box.dao.type.EnumTypeHandler"/>
+        <result column="add_time" property="addTime"/>
+        <result column="delivery_time" property="deliveryTime"/>
+        <result column="cancel_time" property="cancelTime"/>
+        <result column="modify_time" property="modifyTime"/>
+    </resultMap>
+
+    <sql id="filed">
+        record_id, box_id, rid, quantity, status, add_by, add_time, delivery_time, cancel_time, modify_time
+    </sql>
+
+    <insert id="insertSelective" parameterType="com.store59.box.model.distribution.DistributionRecord" useGeneratedKeys="true" keyProperty="recordId">
+        INSERT INTO b_distributionRecord
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="boxId != null">
+                box_id,
+            </if>
+            <if test="rid != null">
+                rid,
+            </if>
+            <if test="quantity != null">
+                quantity,
+            </if>
+            <if test="distributionRecordAddBy != null">
+                add_by,
+            </if>
+            add_time
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="boxId != null">
+                #{boxId},
+            </if>
+            <if test="rid != null">
+                #{rid},
+            </if>
+            <if test="quantity != null">
+                #{quantity},
+            </if>
+            <if test="distributionRecordAddBy != null">
+                #{distributionRecordAddBy},
+            </if>
+            unix_timestamp(now())
+        </trim>
+    </insert>
+
+    <update id="updateDistributionRecord">
+        UPDATE b_distributionRecord
+        SET modify_time = unix_timestamp(now())
+        <if test="sn != null">
+            , sn = #{sn}
+        </if>
+        <if test="quantity != null">
+            , quantity = #{quantity}
+        </if>
+        <if test="distributionRecordStatus != null">
+            , status = #{distributionRecordStatus}
+        </if>
+        <if test="distributionRecordStatus != null and distributionRecordStatus.name() == 'DELIVERED'">
+            , delivery_time = unix_timestamp(now())
+        </if>
+        <if test="distributionRecordStatus != null and distributionRecordStatus.name() == 'CANCEL'">
+            , cancel_time = unix_timestamp(now())
+        </if>
+        WHERE record_id = #{recordId}
+        <if test="distributionRecordStatus != null">
+            AND status != #{distributionRecordStatus}
+        </if>
+    </update>
+
+    <update id="cancleDistributionRecords">
+        UPDATE b_distributionRecord
+        SET   modify_time = unix_timestamp(now())
+            , status = 'cancel'
+            , cancel_time = unix_timestamp(now())
+        WHERE box_id = #{boxId}
+          AND status = 'undelivered'
+    </update>
+
+    <update id="cancleDistributionRecordsByRid">
+        UPDATE b_distributionRecord
+        SET   modify_time = unix_timestamp(now())
+            , status = 'cancel'
+            , cancel_time = unix_timestamp(now())
+        WHERE box_id = #{boxId}
+          AND rid = #{rid}
+          AND status = 'undelivered'
+    </update>
+
+    <select id="selectDistributionRecordList" parameterType="com.store59.box.model.query.DistributionRecordQuery"
+            resultMap="distributionRecordMapper">
+        SELECT
+        <include refid="filed"/>
+        FROM b_distributionRecord
+        <where>
+            <if test="boxId != null">
+                AND box_id = #{boxId}
+            </if>
+            <if test="rid != null">
+                AND rid = #{rid}
+            </if>
+            <if test="startTime != null">
+                AND delivery_time >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND delivery_time <![CDATA[ < ]]> #{endTime}
+            </if>
+            <if test="distributionRecordStatus != null">
+                AND status = #{distributionRecordStatus}
+            </if>
+            <if test="boxIdList != null">
+                AND box_id in
+                <foreach collection="boxIdList" item="bid" index="index" open="(" close=")" separator=",">
+                    #{bid}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY delivery_time desc, add_time
+        LIMIT ${limit}
+        OFFSET ${offset}
+    </select>
+
+    <select id="findDistributionRecordById" resultMap="distributionRecordMapper">
+        SELECT
+        <include refid="filed"/>
+        FROM b_distributionRecord
+        WHERE record_id = #{recordId}
+    </select>
+
+    <select id="findDistributionRecordByIdList" resultMap="distributionRecordMapper">
+        SELECT
+        <include refid="filed"/>
+        FROM b_distributionRecord
+        WHERE record_id in
+        <foreach collection="recoredIdList" item="recordId" index="index" open="(" close=")" separator=",">
+            #{recordId}
+        </foreach>
+    </select>
+
+</mapper>

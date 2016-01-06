@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.store59.box.dao.mapper.BoxMapper">
+
+    <resultMap type="com.store59.box.model.Box" id="boxmap">
+        <id column="box_id" property="id"/>
+        <result column="box_code" property="code"/>
+        <result column="dorm_id" property="dormId"/>
+        <result column="dormentry_id" property="dormentryId"/>
+        <result column="room" property="room"/>
+        <result column="owner" property="owner"/>
+        <result column="phone" property="phone"/>
+        <result column="status" property="boxStatus" typeHandler="com.store59.box.dao.type.EnumTypeHandler"/>
+        <result column="remark" property="remark"/>
+        <result column="open_time" property="openTime"/>
+        <result column="open_user" property="openUser"/>
+        <result column="is_signed" property="signed" typeHandler="com.store59.box.dao.type.BooleanEnumTypeHandler"/>
+        <result column="is_pay_deposit" property="payDeposit" typeHandler="com.store59.box.dao.type.BooleanEnumTypeHandler"/>
+        <result column="deposit" property="deposit"/>
+        <result column="box_template_id" property="boxTemplateId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="modify_time" property="modifyTime"/>
+        <result column="uid" property="uid"/>
+    </resultMap>
+
+    <resultMap id="dormentryBoxNumMap" type="com.store59.box.model.DormentryBoxNum">
+        <result column="dormentry_id" property="dormentryId"/>
+        <result column="box_num" property="boxNum"/>
+    </resultMap>
+
+    <sql id="filed">
+    box_id, box_code, dorm_id, dormentry_id, room, owner, phone, status, remark, open_time, open_user, is_signed,
+     is_pay_deposit, deposit, box_template_id, create_time, modify_time,uid
+  </sql>
+
+    <insert id="addBox" parameterType="com.store59.box.model.Box" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO b_box(
+        box_id
+        , box_code
+        , dorm_id
+        , dormentry_id
+        , room
+        , owner
+        , phone
+        <if test="uid != null">
+            , uid
+        </if>
+        <if test="boxStatus != null">
+            , status
+        </if>
+        , remark
+        <if test="signed != null">
+            , is_signed
+        </if>
+        <if test="payDeposit != null">
+            , is_pay_deposit
+        </if>
+        <if test="deposit != null">
+            , deposit
+        </if>
+        <if test="boxTemplateId != null">
+            , box_template_id
+        </if>
+        , create_time
+        , modify_time)
+        VALUES
+        (null
+        , #{code}
+        , #{dormId}
+        , #{dormentryId}
+        , #{room}
+        , #{owner}
+        , #{phone}
+        <if test="uid != null">
+            , #{uid}
+        </if>
+        <if test="boxStatus != null">
+            , #{boxStatus}
+        </if>
+        , #{remark}
+        <if test="signed != null">
+            , #{signed, typeHandler=com.store59.box.dao.type.BooleanEnumTypeHandler}
+        </if>
+        <if test="payDeposit != null">
+            , #{payDeposit, typeHandler=com.store59.box.dao.type.BooleanEnumTypeHandler}
+        </if>
+        <if test="deposit != null">
+            , #{deposit}
+        </if>
+        <if test="boxTemplateId != null">
+            , #{boxTemplateId}
+        </if>
+        , unix_timestamp(now())
+        , unix_timestamp(now()))
+    </insert>
+
+    <update id="updateBox" parameterType="com.store59.box.model.Box">
+        UPDATE b_box
+        SET modify_time = unix_timestamp(now())
+        <if test="dormentryId != null">
+            , dormentry_id = #{dormentryId}
+        </if>
+        <if test="room != null">
+            , room = #{room}
+        </if>
+        <if test="code != null">
+            , box_code = #{code}
+        </if>
+        <if test="owner != null">
+            , owner = #{owner}
+        </if>
+        <if test="uid != null">
+            , uid = #{uid}
+        </if>
+        <if test="phone != null">
+            , phone = #{phone}
+        </if>
+        <if test="remark != null">
+            , remark = #{remark}
+        </if>
+        <if test="boxStatus != null">
+            ,status = #{boxStatus}
+        </if>
+        <if test="signed != null">
+            , is_signed = #{signed, typeHandler=com.store59.box.dao.type.BooleanEnumTypeHandler}
+        </if>
+        <if test="payDeposit != null">
+            , is_pay_deposit = #{payDeposit, typeHandler=com.store59.box.dao.type.BooleanEnumTypeHandler}
+        </if>
+        WHERE box_id = #{id}
+        <if test="dormId != null">
+            AND dorm_id = #{dormId}
+        </if>
+    </update>
+
+    <update id="closeBox">
+    UPDATE b_box
+    SET modify_time = unix_timestamp(now())
+    , status = 'closed'
+    WHERE box_id = #{boxId}
+    AND status = 'approved'
+  </update>
+
+    <update id="openBox">
+    UPDATE b_box
+    SET modify_time = unix_timestamp(now())
+    , status = 'approved'
+    , open_time = unix_timestamp(now())
+    , open_user = #{openUser}
+    WHERE box_id = #{boxId}
+      AND status = 'new'
+      AND is_signed = 'true'
+      AND is_pay_deposit = 'true'
+  </update>
+
+    <select id="findBoxById" resultMap="boxmap">
+        SELECT
+        <include refid="filed"/>
+        FROM b_box
+        WHERE box_id = #{boxId}
+    </select>
+
+    <select id="findBoxByUid" resultMap="boxmap">
+        SELECT
+        <include refid="filed"/>
+        FROM b_box
+        WHERE uid = #{uid} ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <select id="findBoxCount" resultType="int">
+        SELECT COUNT(*) FROM b_box WHERE dorm_id = ${dormId}
+        <if test="boxStatus != null">
+            AND status = #{boxStatus}
+        </if>
+    </select>
+
+    <select id="findBoxListByDormentryIdAndRoom" resultMap="boxmap">
+        SELECT
+        <include refid="filed"/>
+        FROM b_box
+        WHERE dormentry_id = #{dormentryId}
+        <if test="null != room">
+            AND room = #{room}
+        </if>
+        AND status = 'approved'
+        ORDER BY box_id
+    </select>
+
+    <select id="findBoxListByIds" parameterType="string" resultMap="boxmap">
+        SELECT
+        <include refid="filed"/>
+        FROM b_box
+        WHERE box_id IN
+        <foreach collection="idList" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="findBoxList" parameterType="com.store59.box.model.query.BoxQuery" resultMap="boxmap">
+        SELECT
+        <include refid="filed"/>
+        FROM b_box
+        <where>
+            <if test="boxId != null">
+                AND box_id = #{boxId}
+            </if>
+            <if test="dormId != null">
+                AND dorm_id = #{dormId}
+            </if>
+            <if test="dormentryId != null">
+                AND dormentry_id = #{dormentryId}
+            </if>
+            <if test="room != null">
+                AND room = #{room}
+            </if>
+            <if test="boxCode != null">
+                AND box_code = #{boxCode}
+            </if>
+            <if test="boxStatus != null">
+                AND status = #{boxStatus}
+            </if>
+            <if test="owner != null">
+                AND owner = #{owner}
+            </if>
+            <if test="uid != null">
+                AND uid = #{uid}
+            </if>
+            <if test="openTimeBigin != null">
+                AND open_time &gt;= #{openTimeBigin}
+            </if>
+            <if test="openTimeEnd != null">
+                AND open_time &lt;= #{openTimeEnd}
+            </if>
+        </where>
+        ORDER BY box_id DESC
+        LIMIT ${limit}
+        OFFSET ${offset}
+    </select>
+
+    <select id="findBoxNumByDormentryIds" resultMap="dormentryBoxNumMap">
+        select dormentry_id,count(box_id) box_num from b_box
+        where dormentry_id in
+        <foreach collection="dormentryIds" item="dormentryId" index="index" open="(" close=")" separator=",">
+            #{dormentryId}
+        </foreach>
+        AND status = 'approved'
+        group by dormentry_id
+    </select>
+
+</mapper>

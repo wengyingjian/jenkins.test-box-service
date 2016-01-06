@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.store59.box.dao.mapper.BoxItemMapper" >
+
+    <insert id="addBoxItem" parameterType="com.store59.box.model.BoxItem" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO b_box_item (
+            id
+          , box_id
+          , rid
+          , stock
+          , price
+          , modify_time
+        )
+        VALUES
+        ( null
+        , #{boxId}
+        , #{rid}
+        , #{stock}
+        , #{price}
+        , unix_timestamp(now()))
+        ON DUPLICATE KEY UPDATE status = 'online'
+        <if test="stock != null">
+          , stock = #{stock}
+        </if>
+        <if test="price != null">
+            , price = #{price}
+        </if>
+    </insert>
+
+    <update id="addItemStock">
+        UPDATE b_box_item
+        SET modify_time = unix_timestamp(now())
+          , stock = stock + #{quantity}
+        WHERE rid = #{rid}
+        AND   box_id = #{boxId}
+        AND   status = 'online'
+    </update>
+
+    <update id="subItemStock">
+        UPDATE b_box_item
+        SET modify_time = unix_timestamp(now())
+        , stock = stock - #{quantity}
+        WHERE rid = #{rid}
+        AND   box_id = #{boxId}
+        AND   stock >= #{quantity}
+        AND   status = 'online'
+    </update>
+
+    <update id="updateBoxItemStatus">
+        UPDATE b_box_item
+        SET modify_time = unix_timestamp(now())
+        <if test="status != null and status.name() == 'DORM_OFFLINE'">
+            , stock = 0
+        </if>
+        , status = #{status}
+        <where>
+            <if test="boxId != null">
+              AND box_id = #{boxId}
+            </if>
+            <if test="boxItemId != null">
+              AND id = #{boxItemId}
+            </if>
+            <if test="status != null and status.name() != 'ONLINE' and status.name() != 'NONE'">
+              AND status = 'online'
+            </if>
+        </where>
+    </update>
+
+    <update id="updateBoxItemPrice">
+        UPDATE b_box_item
+        SET modify_time = unix_timestamp(now())
+        , price = #{price}
+        WHERE rid = #{rid}
+        AND box_id in
+        <foreach collection="boxList" item="box" index="index" open="(" close=")" separator=",">
+            #{box.id}
+        </foreach>
+    </update>
+
+    <select id="findBoxItemByRid" resultType="com.store59.box.model.BoxItem" >
+        SELECT
+        id, box_id as boxId,rid,stock,price
+        FROM b_box_item
+        WHERE box_id = #{boxId}
+        AND rid = #{rid}
+        AND status = 'online'
+        LIMIT 1
+    </select>
+
+    <select id="findOfflineBoxItemByRid" resultType="com.store59.box.model.BoxItem" >
+        SELECT
+        id, box_id as boxId,rid,stock,price
+        FROM b_box_item
+        WHERE box_id = #{boxId}
+        AND rid = #{rid}
+        AND status != 'online'
+        LIMIT 1
+    </select>
+
+    <select id="findBoxItemById" resultType="com.store59.box.model.BoxItem" >
+        SELECT
+        id, box_id as boxId,rid,stock,price
+        FROM b_box_item
+        WHERE id = #{boxItemId}
+    </select>
+
+    <select id="findBoxItemListByBoxId" resultType="com.store59.box.model.BoxItem" >
+        SELECT
+          id,box_id as boxId,rid,stock,price
+        FROM b_box_item
+        WHERE box_id = #{boxId}
+        AND status = 'online'
+        ORDER BY rid
+        <if test="needLock">
+            FOR UPDATE
+        </if>
+    </select>
+
+    <select id="findBoxIdtemListByBoxIds" resultType="com.store59.box.model.BoxItem" >
+        SELECT
+        id,box_id as boxId,rid,stock,price
+        FROM b_box_item
+        WHERE box_id IN
+        <foreach collection="boxList" item="box" index="index" open="(" close=")" separator=",">
+            #{box.id}
+        </foreach>
+        AND status = 'online'
+        ORDER BY rid
+    </select>
+
+    <select id="findBoxItemListByBoxIdWithItemStatus" resultType="com.store59.box.model.BoxItem" >
+        SELECT
+        id,box_id as boxId,rid,stock,price
+        FROM b_box_item
+        WHERE box_id = #{boxId}
+        <if test="boxItemStatus != null and boxItemStatus.name() != 'ALL'">
+          AND status = #{boxItemStatus}
+        </if>
+        ORDER BY rid
+    </select>
+
+    <select id="findSumStockByBoxsAndRid" resultType="int">
+        select sum(stock) from b_box_item where rid = #{rid} and box_id in
+        <foreach collection="boxList" item="box" index="index" open="(" close=")" separator=",">
+            #{box.id}
+        </foreach>
+    </select>
+</mapper>

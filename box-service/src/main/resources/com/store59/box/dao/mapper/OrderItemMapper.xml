@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.store59.box.dao.mapper.OrderItemMapper" >
+
+    <resultMap id="orderItemMap" type="com.store59.box.model.OrderItem">
+        <id column="id" property="id"/>
+        <result column="order_id" property="orderId"/>
+        <result column="rid" property="rid"/>
+        <result column="quantity" property="quantity"/>
+        <result column="price" property="price"/>
+        <result column="amount" property="amount"/>
+    </resultMap>
+
+    <sql id="file">
+        id,order_id,rid,quantity,price,amount
+    </sql>
+
+    <select id="getOrderItemListByOrderId" resultMap="orderItemMap">
+        SELECT <include refid="file"/>
+        FROM b_order_item
+        WHERE order_id = #{orderId}
+    </select>
+
+    <select id="getOrderItemsByOrderIds" resultMap="orderItemMap">
+        SELECT <include refid="file"/>
+        FROM b_order_item
+        WHERE order_id IN
+        <foreach collection="list" item="orderId" index="index" open="(" close=")" separator=",">
+            #{orderId}
+        </foreach>
+    </select>
+
+    <insert id="insertSelective" parameterType="com.store59.box.model.OrderItem">
+        <selectKey resultType="long" keyProperty="id">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        INSERT INTO b_order_item
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="orderId != null">
+                order_id,
+            </if>
+            <if test="rid != null">
+                rid,
+            </if>
+            <if test="quantity != null">
+                quantity,
+            </if>
+            <if test="price != null">
+                price,
+            </if>
+            <if test="amount != null">
+                amount,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id,jdbcType=INTEGER},
+            </if>
+            <if test="orderId != null">
+                #{orderId,jdbcType=INTEGER},
+            </if>
+            <if test="rid != null">
+                #{rid,jdbcType=INTEGER},
+            </if>
+            <if test="quantity != null">
+                #{quantity,jdbcType=INTEGER},
+            </if>
+            <if test="price != null">
+                #{price,jdbcType=DECIMAL},
+            </if>
+            <if test="amount != null">
+                #{amount,jdbcType=DECIMAL},
+            </if>
+        </trim>
+    </insert>
+</mapper>

@@ -16,12 +16,12 @@ import org.springframework.web.client.RestTemplate;
 @SpringBootApplication
 @ComponentScan(basePackages = "com.store59")
 @EnableAutoConfiguration(exclude = { DataSourceAutoConfiguration.class })
-//@PropertySource("classpath:boxservice.properties")
+@PropertySource("classpath:boxservice.properties")
 public class BoxServiceApplication extends SpringBootServletInitializer {
 
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-        return application.sources(BoxServiceApplication.class);
+        return application. sources(BoxServiceApplication.class);
     }
 
     public static void main(String[] args) {

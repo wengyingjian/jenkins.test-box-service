@@ -1,9 +1,1 @@
 baseservice.url=${baseservice.url}
-dormservice.url=${dormservice.url}
-
-box.image.url.pre=${box.image.url.pre}
-box.image.url.suf=${box.image.url.suf}
-
-couponservice.url=${couponservice.url}
-sms.server.root.url=${sms.server.root.url}
-rabbitmq.event.entry=${rabbitmq.event.entry}

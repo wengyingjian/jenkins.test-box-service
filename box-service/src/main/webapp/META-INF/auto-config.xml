@@ -1,20 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
 	<group>
-		<property name="baseservice.url" defaultValue="http://localhost/baseservice"
-			description="base service url" />
-		<property name="dormservice.url" defaultValue="http://localhost/dormservice"
-				  description="dorm service url" />
-		<property name="box.image.url.pre" defaultValue="http://image.59store.com"
-				  description="box.image.url.pre" />
-		<property name="box.image.url.suf" defaultValue="!small"
-				  description="box.image.url.suf" />
-		<property name="couponservice.url" defaultValue="http://192.168.30.226:8080/couponservice"
-				  description="coupon service url" />
-		<property name="sms.server.root.url" defaultValue="http://192.168.30.167:8080/event-sms"
-				  description="send sms service url" />
-		<property name="rabbitmq.event.entry" defaultValue="event-entry"
-				  description="rabbitmq.event.entry" />
+		<property name="baseservice.url" description="base service url" />
 	</group>
 	<script>
 		<generate template="boxservice.properties.vm" destfile="WEB-INF/classes/boxservice.properties"></generate>

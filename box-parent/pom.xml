@@ -38,11 +38,6 @@
 			</exclusions>
 		</dependency>
 
-		<!-- 日志打印 -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-		</dependency>
 	</dependencies>
 
 	<build>
